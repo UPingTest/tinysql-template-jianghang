@@ -213,38 +213,19 @@ func onDropColumn(t *meta.Meta, job *model.Job) (ver int64, _ error) {
 	}
 
 	originalState := colInfo.State
+	// TODO: fill the codes of the case `StatePublic`, `StateWriteOnly` and `StateDeleteOnly`.
+	//       You'll need to find the right place where to put the function `adjustColumnInfoInDropColumn`.
+	//       Also you'll need to take a corner case about the default value.
+	//       (Think about how the not null property and default value will influence the `Drop Column` operation.
 	switch colInfo.State {
 	case model.StatePublic:
-		// public -> write only
-		job.SchemaState = model.StateWriteOnly
-		colInfo.State = model.StateWriteOnly
-		// Set this column's offset to the last and reset all following columns' offsets.
-		adjustColumnInfoInDropColumn(tblInfo, colInfo.Offset)
-		// When the dropping column has not-null flag and it hasn't the default value, we can backfill the column value like "add column".
-		// NOTE: If the state of StateWriteOnly can be rollbacked, we'd better reconsider the original default value.
-		// And we need consider the column without not-null flag.
-		if colInfo.OriginDefaultValue == nil && mysql.HasNotNullFlag(colInfo.Flag) {
-			// If the column is timestamp default current_timestamp, and DDL owner is new version TiDB that set column.Version to 1,
-			// then old TiDB update record in the column write only stage will uses the wrong default value of the dropping column.
-			// Because new version of the column default value is UTC time, but old version TiDB will think the default value is the time in system timezone.
-			// But currently will be ok, because we can't cancel the drop column job when the job is running,
-			// so the column will be dropped succeed and client will never see the wrong default value of the dropped column.
-			// More info about this problem, see PR#9115.
-			colInfo.OriginDefaultValue, err = generateOriginDefaultValue(colInfo)
-			if err != nil {
-				return ver, errors.Trace(err)
-			}
-		}
+		// To be filled
 		ver, err = updateVersionAndTableInfoWithCheck(t, job, tblInfo, originalState != colInfo.State)
 	case model.StateWriteOnly:
-		// write only -> delete only
-		job.SchemaState = model.StateDeleteOnly
-		colInfo.State = model.StateDeleteOnly
+		// To be filled
 		ver, err = updateVersionAndTableInfo(t, job, tblInfo, originalState != colInfo.State)
 	case model.StateDeleteOnly:
-		// delete only -> reorganization
-		job.SchemaState = model.StateDeleteReorganization
-		colInfo.State = model.StateDeleteReorganization
+		// To be filled
 		ver, err = updateVersionAndTableInfo(t, job, tblInfo, originalState != colInfo.State)
 	case model.StateDeleteReorganization:
 		// reorganization -> absent
